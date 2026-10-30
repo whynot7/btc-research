@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -108,36 +109,93 @@ def load(asset: str, timeframe: str, offset_h: int = 0, source: str = "auto") ->
 
 
 # ---------------------------------------------------------------- funding
-def funding(asset: str, index: pd.DatetimeIndex, timeframe: str) -> tuple[pd.Series, str]:
-    """Funding rate per bar paid by a 1x long (negative = longs receive)."""
-    per_bar_const = FUNDING_FALLBACK_PA * TF_HOURS[timeframe] / (365 * 24)
-    path = CACHE / f"{asset}_funding_hl.csv"
+BINANCE_FUNDING_ZIP = ("https://data.binance.vision/data/futures/um/monthly/fundingRate/"
+                       "{a}USDT/{a}USDT-fundingRate-{ym}.zip")
+
+
+def _get_bytes(url: str) -> bytes | None:
     try:
-        old = pd.read_csv(path, index_col=0, parse_dates=True).iloc[:, 0] if path.exists() else None
-        st = int(old.index[-1].value // 10**6) + 1 if old is not None and len(old) else 1672531200000
-        rows = []
-        while True:
-            d = _get(HL, {"type": "fundingHistory", "coin": asset, "startTime": st})
-            if not d:
-                break
-            rows += d
-            st = int(d[-1]["time"]) + 1
-            if len(d) < 500:
-                break
-        new = pd.Series([float(x["fundingRate"]) for x in rows], index=pd.to_datetime([int(x["time"]) for x in rows], unit="ms"))
-        s = pd.concat([old, new]) if (old is not None and len(new)) else (old if old is not None else new)
-        s = s[~s.index.duplicated(keep="last")].sort_index().astype(float)
-        CACHE.mkdir(exist_ok=True)
-        s.to_frame("rate").to_csv(path)
-        hours = TF_HOURS[timeframe]
-        const_h = FUNDING_FALLBACK_PA / (365 * 24)
-        rng = pd.date_range(index[0] - pd.Timedelta(hours=1), index[-1] + pd.Timedelta(hours=hours - 1), freq="1h")
-        hourly = s.resample("1h").sum().reindex(rng).fillna(const_h)   # gaps / pre-history -> constant
-        cum = hourly.cumsum()
-        end = cum.reindex(index + pd.Timedelta(hours=hours - 1)).values
-        start = cum.reindex(index - pd.Timedelta(hours=1)).values
-        out = pd.Series(end - start, index=index)
-        return out, f"hyperliquid from {s.index[0].date()}, {FUNDING_FALLBACK_PA:.0%} p.a. before"
-    except Exception as e:  # noqa: BLE001
-        print(f"[data] funding download failed for {asset}: {e} -> constant")
-        return pd.Series(per_bar_const, index=index), f"constant {FUNDING_FALLBACK_PA:.0%} p.a."
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
+            return r.read()
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
+
+
+def _binance_funding(asset: str) -> pd.Series:
+    """Binance USDT-M funding events from the public monthly archive (from 2019-09)."""
+    import io
+    import zipfile
+    path = CACHE / f"{asset}_funding_binance.csv"
+    old = pd.read_csv(path, index_col=0, parse_dates=True).iloc[:, 0] if path.exists() else None
+    done = set(old.index.strftime("%Y-%m")) if old is not None else set()
+    months = pd.period_range("2019-09", pd.Timestamp.now(tz="UTC").tz_localize(None), freq="M")[:-1]  # last month complete
+    parts = []
+    for m in months:
+        ym = str(m)
+        if ym in done and ym != str(months[-1]):
+            continue
+        raw = _get_bytes(BINANCE_FUNDING_ZIP.format(a=asset, ym=ym))
+        if raw is None:
+            continue
+        with zipfile.ZipFile(io.BytesIO(raw)) as z:
+            df = pd.read_csv(z.open(z.namelist()[0]), header=None)
+        if not str(df.iloc[0, 0]).strip().lstrip("-").isdigit():      # header row present
+            df = df.iloc[1:]
+        t = pd.to_numeric(df.iloc[:, 0], errors="coerce")
+        r = pd.to_numeric(df.iloc[:, -1], errors="coerce")
+        parts.append(pd.Series(r.values, index=pd.to_datetime(t.values, unit="ms")).dropna())
+    if not parts and old is None:
+        raise RuntimeError("no binance funding files")
+    s = pd.concat(([old] if old is not None else []) + parts)
+    s = s[~s.index.duplicated(keep="last")].sort_index().astype(float)
+    CACHE.mkdir(exist_ok=True)
+    s.to_frame("rate").to_csv(path)
+    return s
+
+
+def _hyperliquid_funding(asset: str) -> pd.Series:
+    path = CACHE / f"{asset}_funding_hl.csv"
+    old = pd.read_csv(path, index_col=0, parse_dates=True).iloc[:, 0] if path.exists() else None
+    st = int(old.index[-1].value // 10**6) + 1 if old is not None and len(old) else 1672531200000
+    rows = []
+    while True:
+        d = _get(HL, {"type": "fundingHistory", "coin": asset, "startTime": st})
+        if not d:
+            break
+        rows += d
+        st = int(d[-1]["time"]) + 1
+        if len(d) < 500:
+            break
+    new = pd.Series([float(x["fundingRate"]) for x in rows], index=pd.to_datetime([int(x["time"]) for x in rows], unit="ms"))
+    s = pd.concat([old, new]) if (old is not None and len(new)) else (old if old is not None else new)
+    s = s[~s.index.duplicated(keep="last")].sort_index().astype(float)
+    CACHE.mkdir(exist_ok=True)
+    s.to_frame("rate").to_csv(path)
+    return s
+
+
+def funding(asset: str, index: pd.DatetimeIndex, timeframe: str) -> tuple[pd.Series, str]:
+    """Funding rate per bar paid by a 1x long (negative = longs receive).
+    NaN where no venue history exists: the engine then charges longs FUNDING_FALLBACK_PA and gives
+    shorts nothing (conservative for both sides)."""
+    hours = TF_HOURS[timeframe]
+    events, src = None, []
+    for name, fn in (("binance", _binance_funding), ("hyperliquid", _hyperliquid_funding)):
+        try:
+            s = fn(asset)
+            if len(s):
+                events = s if events is None else pd.concat([events, s[s.index > events.index[-1]]])
+                src.append(f"{name} {s.index[0].date()}..{s.index[-1].date()}")
+        except Exception as e:  # noqa: BLE001
+            print(f"[data] {name} funding failed for {asset}: {e}")
+    if events is None:
+        return pd.Series(np.nan, index=index), f"none (fallback {FUNDING_FALLBACK_PA:.0%} p.a. for longs)"
+    rng = pd.date_range(index[0] - pd.Timedelta(hours=1), index[-1] + pd.Timedelta(hours=hours - 1), freq="1h")
+    hourly = events.resample("1h").sum().reindex(rng).fillna(0.0)
+    cum = hourly.cumsum()
+    out = pd.Series(cum.reindex(index + pd.Timedelta(hours=hours - 1)).values
+                    - cum.reindex(index - pd.Timedelta(hours=1)).values, index=index)
+    out[index < events.index[0]] = np.nan                                  # before any history
+    return out, "; ".join(src) + f"; before: fallback {FUNDING_FALLBACK_PA:.0%} p.a. longs pay, shorts get 0"

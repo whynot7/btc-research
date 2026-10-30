@@ -7,8 +7,9 @@ and approval from both humans.
 - **Prices:** Binance spot 1h klines from `data-api.binance.vision` (public market-data mirror, from 2017-08).
   They are resampled to 4h or 1d, which gives one consistent source for every timeframe and makes the
   bar-timing test possible. If Binance fails, the fallback is Yahoo daily (1d only, no timing test).
-- **Funding:** Hyperliquid hourly funding history where it exists. Before that, a constant 10 % p.a. paid
-  by longs (received by shorts).
+- **Funding:** real Binance USDT-M funding history (public monthly archive, from 2019-09), then Hyperliquid
+  for the most recent weeks. **Before 2019-09 the fallback is conservative:** longs pay 10 % p.a. and shorts
+  receive nothing. Assuming shorts receive funding during bear markets would flatter long/short strategies.
 - **Completed bars only.** Bars are indexed by their open time in UTC.
 
 ## Execution (`engine.py`)
@@ -40,7 +41,9 @@ and approval from both humans.
    - (b) bar-timing shift (daily bars starting 00/04/…/20 UTC; 4h bars offset 0–3h)
    - (c) the same rule on BTC/ETH/SOL/BNB/XRP
    - (d) block bootstrap (30-day blocks, 200 paths, close-only)
-   - (e) deflated Sharpe ratio, using the number of trials in `LEDGER.csv` plus each strategy's declared `prior_trials`
+   - (e) deflated Sharpe ratio. It is computed in a final pass for **all** strategies on the same basis:
+     daily returns, the same trial count (`LEDGER.csv` variants plus every strategy's declared `prior_trials`)
+     and the same Sharpe dispersion across trials. As a result it changes for everyone when new variants are added.
 5. **Checklist:** seven pass/fail criteria at the end of each report.
 
 ## Counting trials honestly
@@ -50,6 +53,6 @@ and report the best" visible and costly.
 
 ## Known limitations
 - The bootstrap is close-only, with no funding and no liquidation check. It is a stress test, not a forecast.
-- Funding before Hyperliquid's history is a constant assumption.
+- Funding before 2019-09 is a (conservative) constant assumption.
 - Spot prices are used for perp strategies. The basis between perp and spot is ignored.
 - The equal-weight portfolio is rebalanced every bar at no cost (a small optimism for multi-asset strategies).

@@ -42,6 +42,7 @@ COSTS = {                            # name -> (fee per side, execution)
 MAIN = "0.05%"
 CROSS_ASSETS = ["BTC", "ETH", "SOL", "BNB", "XRP"]
 BENCH_FEE = 0.001                    # spot costs for benchmarks
+SR_VAR_FALLBACK = 0.09               # variance of annual Sharpe across trials if the ledger has < 3 rows
 
 
 # ---------------------------------------------------------------- helpers
@@ -312,24 +313,8 @@ def evaluate(name: str, quick: bool = False) -> dict:
     if not any(r["variant"] == row["variant"] for r in rows_l):
         append_ledger(row)
         rows_l.append({k: str(v) for k, v in row.items()})
-    variants = {r["variant"]: r for r in rows_l}
-    # declared prior trials of every strategy on the bench (not only those already in the ledger)
-    prior = {r["strategy"]: int(float(r.get("prior_trials") or 0)) for r in rows_l}
-    for other in all_strategies():
-        try:
-            prior[other] = int(load_strategy(other)[1].get("prior_trials", 0))
-        except Exception:  # noqa: BLE001
-            pass
-    not_yet_benched = [o for o in all_strategies() if o not in {r["strategy"] for r in rows_l}]
-    n_trials = len(variants) + len(not_yet_benched) + sum(prior.values())
-    srs = np.array([float(r["sharpe"]) for r in variants.values()])
-    ppy = engine.bars_per_year(main_res.index)
-    sr_var_ann = float(np.var(srs)) if len(srs) > 2 else 0.25    # fallback: annual SR std 0.5 across tries
-    dsr = metrics.deflated_sharpe(main_res["ret"], n_trials, sr_var_ann / ppy)
-    rob["deflated_sharpe"] = {"p": dsr, "n_trials": n_trials, "sr_var_annual": sr_var_ann}
-    L += ["### 3e. Deflated Sharpe ratio", "",
-          f"Probability that the true Sharpe is above 0 after correcting for **{n_trials} trials** "
-          f"(bench variants in LEDGER.csv + declared prior trials): **{dsr:.2f}** (≥ 0.95 is the usual bar).", ""]
+    rob["deflated_sharpe"] = {"p": None}          # filled in by finalize() once all strategies ran
+    L += ["### 3e. Deflated Sharpe ratio", "", "{{DSR_TEXT}}", ""]
 
     # verdict checklist
     chk = [
@@ -341,25 +326,17 @@ def evaluate(name: str, quick: bool = False) -> dict:
          sum(v["strategy"]["MAR"] > v["buy_hold"]["MAR"] for a, v in ca.items() if a not in meta["assets"])
          > len([a for a in ca if a not in meta["assets"]]) / 2),
         ("No liquidation in any cost scenario", not any(s.get("Liquidated") for s in full.values())),
-        ("Deflated Sharpe ≥ 0.95", bool(dsr >= 0.95)),
     ]
     out["checklist"] = {k: bool(v) for k, v in chk}
-    L += ["## 4. Checklist", "", *[f"- {'✅' if v else '❌'} {k}" for k, v in chk], "",
+    L += ["## 4. Checklist", "", *[f"- {'✅' if v else '❌'} {k}" for k, v in chk], "{{DSR_CHECK}}", "",
           "_Research only, not investment advice._"]
 
     d = RESULTS / name
     d.mkdir(parents=True, exist_ok=True)
-    report = "\n".join(L) + "\n"
-    (d / "report.md").write_text(report)
+    (d / "report_template.md").write_text("\n".join(L) + "\n")
     (d / "metrics.json").write_text(json.dumps({**out, "robustness": rob}, indent=2, default=str))
     eq = (1 + main_res["ret"]).cumprod()
     eq.resample("1D").last().dropna().to_frame("equity").to_csv(d / "equity.csv")
-    if meta.get("issue"):
-        try:
-            post_issue(meta["issue"], report)
-        except Exception as e:  # noqa: BLE001
-            print(f"[bench] could not post to issue #{meta['issue']}: {e}")
-    print(report)
     return out
 
 
@@ -371,7 +348,50 @@ def main():
     names = a.strategies or all_strategies()
     for n in names:
         evaluate(n, a.quick)
+    finalize(post_to_issues=names)
     write_leaderboard()
+
+
+def finalize(post_to_issues=()):
+    """Deflated Sharpe for every benched strategy on a common basis (daily returns, one shared trial
+    count and SR dispersion from the whole ledger), then render report.md and post new reports."""
+    rows = ledger_rows()
+    variants = {r["variant"]: r for r in rows}
+    prior = {}
+    for n in all_strategies():
+        try:
+            prior[n] = int(load_strategy(n)[1].get("prior_trials", 0))
+        except Exception:  # noqa: BLE001
+            pass
+    n_trials = len(variants) + sum(prior.values())
+    srs = np.array([float(r["sharpe"]) for r in variants.values()])
+    sr_var = float(np.var(srs)) if len(srs) >= 3 else SR_VAR_FALLBACK
+    for n in all_strategies():
+        d = RESULTS / n
+        if not (d / "report_template.md").exists():
+            continue
+        eq = pd.read_csv(d / "equity.csv", index_col=0, parse_dates=True)["equity"]
+        r = eq.pct_change().dropna()
+        dsr = metrics.deflated_sharpe(r, n_trials, sr_var / 365)
+        m = json.loads((d / "metrics.json").read_text())
+        m["robustness"]["deflated_sharpe"] = {"p": dsr, "n_trials": n_trials, "sr_var_annual": sr_var}
+        m["checklist"]["Deflated Sharpe ≥ 0.95"] = bool(dsr >= 0.95)
+        (d / "metrics.json").write_text(json.dumps(m, indent=2, default=str))
+        text = (f"Probability that the true Sharpe is above 0 after correcting for **{n_trials} trials** "
+                f"({len(variants)} bench variants in LEDGER.csv + {sum(prior.values())} declared prior trials; "
+                f"variance of annual Sharpe across trials {sr_var:.3f}; daily returns): **{dsr:.2f}** "
+                f"(≥ 0.95 is the usual bar).")
+        report = ((d / "report_template.md").read_text().replace("{{DSR_TEXT}}", text)
+                  .replace("{{DSR_CHECK}}", f"- {'✅' if dsr >= 0.95 else '❌'} Deflated Sharpe ≥ 0.95"))
+        (d / "report.md").write_text(report)
+        if n in post_to_issues:
+            print(report)
+            issue = m["meta"].get("issue")
+            if issue:
+                try:
+                    post_issue(issue, report)
+                except Exception as e:  # noqa: BLE001
+                    print(f"[bench] could not post to issue #{issue}: {e}")
 
 
 def all_strategies():

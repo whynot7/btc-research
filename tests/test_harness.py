@@ -112,7 +112,19 @@ def test_bench_end_to_end_offline(tmp_path, monkeypatch):
     monkeypatch.setattr(bench, "PERIODS", {"a": ("2018-07-01", "2019-12-31"), "b": ("2020-01-01", None)})
     monkeypatch.setattr(bench, "all_strategies", lambda: ["v3"])
     out = bench.evaluate("v3", quick=True)
-    assert (tmp_path / "results" / "v3" / "report.md").exists()
+    bench.finalize(post_to_issues=())
+    rep = (tmp_path / "results" / "v3" / "report.md").read_text()
+    assert "{{" not in rep and "Deflated Sharpe" in rep
     assert set(out["checklist"]) and (tmp_path / "LEDGER.csv").exists()
     bench.write_leaderboard()
     assert "v3" in (tmp_path / "LEADERBOARD.md").read_text()
+
+
+def test_missing_funding_is_conservative():
+    df = synth(n=400, vol=0.0, drift=0.0)
+    f = pd.Series(np.nan, index=df.index)
+    cfg = engine.Config(fee=0.0, funding_fallback_pa=0.365)
+    longs = engine.run(df, pd.Series(1.0, index=df.index), cfg, f, df.index[10])
+    shorts = engine.run(df, pd.Series(-1.0, index=df.index), cfg, f, df.index[10])
+    assert (1 + longs["ret"]).prod() < 1
+    assert (1 + shorts["ret"]).prod() == pytest.approx(1.0)

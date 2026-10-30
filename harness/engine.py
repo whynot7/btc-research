@@ -31,6 +31,7 @@ class Config:
     mmr: float = 0.012                  # maintenance margin (Lighter BTC/ETH: 1.2 % of notional)
     cash_yield: float = 0.0             # annual yield while flat
     use_funding: bool = True
+    funding_fallback_pa: float = 0.10   # where funding history is NaN: longs pay this, shorts receive 0
 
 
 def bars_per_year(index: pd.DatetimeIndex) -> float:
@@ -44,8 +45,9 @@ def run(df: pd.DataFrame, target: pd.Series, cfg: Config, funding: pd.Series | N
     idx = df.index
     tgt = target.reindex(idx).fillna(0.0).clip(-cfg.max_leverage, cfg.max_leverage).values
     o, h, l, c = (df[k].values.astype(float) for k in ("open", "high", "low", "close"))
-    fnd = (funding.reindex(idx).fillna(0.0).values if (funding is not None and cfg.use_funding)
+    fnd = (funding.reindex(idx).values.astype(float) if (funding is not None and cfg.use_funding)
            else np.zeros(len(idx)))
+    fallback_bar = cfg.funding_fallback_pa / bars_per_year(idx)
     sel = np.ones(len(idx), bool)
     if start is not None:
         sel &= idx >= pd.Timestamp(start)
@@ -87,7 +89,8 @@ def run(df: pd.DataFrame, target: pd.Series, cfg: Config, funding: pd.Series | N
                 R[k] = -1.0
                 dead = True
                 break
-        cash -= notional * fnd[i]
+        rate = fnd[i] if not np.isnan(fnd[i]) else (fallback_bar if notional > 0 else 0.0)
+        cash -= notional * rate
         if qty == 0 and cash > 0:
             cash *= 1 + cash_bar
         if cfg.execution == "next_close":
