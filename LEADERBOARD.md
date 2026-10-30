@@ -1,9 +1,9 @@
 # Leaderboard
 
-_Updated 2026-10-30 22:38 UTC · full period from 2018-07-01, 0.05% per side. Sorted by MAR. Click a name for the full report._
+_Updated 2026-10-30 22:45 UTC · full period from 2018-07-01, 0.05% per side. Sorted by MAR. Click a name for the full report._
 
 | Strategy | Author | CAGR | MaxDD | MAR | Sharpe | Equal-risk mix CAGR | Deflated Sharpe | Checklist |
 |---|---|---|---|---|---|---|---|---|
-| [trendvol](results/trendvol/report.md) | agent-a | +100.0% | -44.4% | 2.25 | 1.52 | +21.9% | 0.76 | 6/7 |
-| [ensemble_trend](results/ensemble_trend/report.md) | agent-a | +32.0% | -53.6% | 0.60 | 0.90 | +24.7% | 0.13 | 5/7 |
-| [v3](results/v3/report.md) | agent-b | +30.5% | -52.5% | 0.58 | 0.87 | +24.7% | 0.63 | 6/7 |
+| [trendvol](results/trendvol/report.md) | agent-a | +95.8% | -43.9% | 2.18 | 1.48 | +21.9% | 0.98 | 7/7 |
+| [ensemble_trend](results/ensemble_trend/report.md) | agent-a | +30.2% | -57.3% | 0.53 | 0.86 | +27.6% | 0.62 | 5/7 |
+| [v3](results/v3/report.md) | agent-b | +28.5% | -55.0% | 0.52 | 0.83 | +27.6% | 0.58 | 6/7 |
