@@ -1,0 +1,342 @@
+{
+  "strategy": "trendvol",
+  "meta": {
+    "author": "agent-a",
+    "hypothesis": "Crypto trends persist on 4h bars in both directions; volatility targeting keeps risk roughly constant, so exposure is high in calm trends and low in turbulent markets.",
+    "timeframe": "4h",
+    "assets": [
+      "BTC",
+      "ETH"
+    ],
+    "params": {
+      "ema": 200,
+      "band": 0.01,
+      "vol_window": 180,
+      "vol_target": 0.6,
+      "max_lev": 3.0
+    },
+    "prior_trials": 60,
+    "rebalance_threshold": 0.25,
+    "issue": 3
+  },
+  "generated": "2026-10-30 22:36 UTC",
+  "costs": {
+    "Lighter 0%": {
+      "CAGR": 1.070067392300508,
+      "MaxDD": -0.43510048556461556,
+      "MAR": 2.459356925129414,
+      "Sharpe": 1.5770794985252987,
+      "Sortino": 2.1201413525425354,
+      "Final": 429.6669445719127,
+      "Trades": 442,
+      "InMarket": 1.0,
+      "AvgGross": 1.058520791198688,
+      "WorstBar": -0.15146436865026602,
+      "Liquidated": false,
+      "Years": 8.333105179101072
+    },
+    "0.05%": {
+      "CAGR": 0.9999666824429769,
+      "MaxDD": -0.44380174138161055,
+      "MAR": 2.2531833230981815,
+      "Sharpe": 1.5180561731907731,
+      "Sortino": 2.0409427670225266,
+      "Final": 322.44401997424217,
+      "Trades": 442,
+      "InMarket": 1.0,
+      "AvgGross": 1.0576894312061225,
+      "WorstBar": -0.1514805281813379,
+      "Liquidated": false,
+      "Years": 8.333105179101072
+    },
+    "0.10%": {
+      "CAGR": 0.9331156617091783,
+      "MaxDD": -0.45321485870649814,
+      "MAR": 2.058881441734601,
+      "Sharpe": 1.4581860432371039,
+      "Sortino": 1.9626567159811334,
+      "Final": 242.89394250301126,
+      "Trades": 442,
+      "InMarket": 1.0,
+      "AvgGross": 1.0576510439150715,
+      "WorstBar": -0.1514966404482499,
+      "Liquidated": false,
+      "Years": 8.333105179101072
+    },
+    "stress 0.20% + 1 bar late": {
+      "CAGR": 0.6806472274873279,
+      "MaxDD": -0.486957226968842,
+      "MAR": 1.3977556750192335,
+      "Sharpe": 1.202053903736302,
+      "Sortino": 1.603895023923177,
+      "Final": 75.66933514743208,
+      "Trades": 442,
+      "InMarket": 0.9999451754385965,
+      "AvgGross": 1.0677459418650495,
+      "WorstBar": -0.1529161567339537,
+      "Liquidated": false,
+      "Years": 8.333105179101072
+    }
+  },
+  "benchmarks": {
+    "buy_hold": {
+      "CAGR": 0.3090279109594296,
+      "MaxDD": -0.7742275888080157,
+      "MAR": 0.3991435017643874,
+      "Sharpe": 0.739893589707251,
+      "Sortino": 0.9232269934968278,
+      "Final": 9.430778387407491,
+      "Trades": 1,
+      "InMarket": 1.0,
+      "AvgGross": 1.0,
+      "WorstBar": -0.213345761710018,
+      "Liquidated": false,
+      "Years": 8.333105179101072
+    },
+    "equal_risk": {
+      "weight": 0.45,
+      "CAGR": 0.21930696290365725,
+      "MaxDD": -0.4569430438038812,
+      "MAR": 0.47994376077597817,
+      "Sharpe": 0.8111452980521082,
+      "Sortino": 1.0206015997099966,
+      "Final": 5.219022091221445,
+      "Trades": 1,
+      "InMarket": 1.0,
+      "AvgGross": 0.4500000000000001,
+      "WorstBar": -0.07995604004541562,
+      "Liquidated": false,
+      "Years": 8.333105179101072
+    }
+  },
+  "periods": {
+    "2018-07..2021": {
+      "CAGR": 1.6784090882621836,
+      "MaxDD": -0.3438704394968435,
+      "MAR": 4.880934490088935,
+      "Sharpe": 2.0096022708150567,
+      "Sortino": 2.6694024744724656,
+      "Final": 31.49933238985294,
+      "Trades": 200,
+      "InMarket": 1.0,
+      "AvgGross": 0.8612185024990829,
+      "WorstBar": -0.1514805281813379,
+      "Liquidated": false,
+      "Years": 3.5017111567419574
+    },
+    "2022..2023": {
+      "CAGR": 0.6982119575701262,
+      "MaxDD": -0.44380174138161177,
+      "MAR": 1.5732519556964846,
+      "Sharpe": 1.2106390239971727,
+      "Sortino": 1.614193175567779,
+      "Final": 2.8776585673345574,
+      "Trades": 92,
+      "InMarket": 1.0,
+      "AvgGross": 1.2147285231724694,
+      "WorstBar": -0.11314542465054284,
+      "Liquidated": false,
+      "Years": 1.995893223819302
+    },
+    "2024..2026-10": {
+      "CAGR": 0.550448713734492,
+      "MaxDD": -0.4259952359657111,
+      "MAR": 1.2921475811499412,
+      "Sharpe": 1.0866032449464118,
+      "Sortino": 1.4946958253147309,
+      "Final": 3.459387694622731,
+      "Trades": 154,
+      "InMarket": 1.0,
+      "AvgGross": 1.1899795510819777,
+      "WorstBar": -0.12452504246902235,
+      "Liquidated": false,
+      "Years": 2.8300250969655485
+    },
+    "FORWARD (from 2026-11)": {}
+  },
+  "checklist": {
+    "Beats equal-risk mix on CAGR (main costs)": true,
+    "Positive in every sub-period": true,
+    "Parameter MAR range min > 50 % of base": true,
+    "Timing MAR range min > 50 % of base": true,
+    "Better MAR than buy & hold on most other assets": true,
+    "No liquidation in any cost scenario": true,
+    "Deflated Sharpe \u2265 0.95": false
+  },
+  "robustness": {
+    "param_mar_range": [
+      1.724914576900718,
+      2.4150864694365155
+    ],
+    "timing_mar_range": [
+      2.1264471396240636,
+      2.5407954537404045
+    ],
+    "cross_asset": {
+      "BTC": {
+        "strategy": {
+          "CAGR": 0.8577296191690529,
+          "MaxDD": -0.5467557368014879,
+          "MAR": 1.5687619926710912,
+          "Sharpe": 1.2889211305364574,
+          "Sortino": 1.7970108363743906,
+          "Final": 174.3650782873751,
+          "Trades": 213,
+          "InMarket": 1.0,
+          "AvgGross": 1.2076505782217346,
+          "WorstBar": -0.15715461292817434,
+          "Liquidated": false,
+          "Years": 8.333105179101072
+        },
+        "buy_hold": {
+          "CAGR": 0.34793923066506016,
+          "MaxDD": -0.7705058309885581,
+          "MAR": 0.4515724822207439,
+          "Sharpe": 0.7990915352103586,
+          "Sortino": 1.0040658756838645,
+          "Final": 12.038055996795059,
+          "Trades": 1,
+          "InMarket": 1.0,
+          "AvgGross": 1.0003701333015917,
+          "WorstBar": -0.20517955742339178,
+          "Liquidated": false,
+          "Years": 8.333105179101072
+        }
+      },
+      "ETH": {
+        "strategy": {
+          "CAGR": 0.9795506009488624,
+          "MaxDD": -0.5422835542197428,
+          "MAR": 1.8063439197566578,
+          "Sharpe": 1.4051765065555812,
+          "Sortino": 1.9609762328280629,
+          "Final": 296.0197814797091,
+          "Trades": 229,
+          "InMarket": 1.0,
+          "AvgGross": 0.9077282841905102,
+          "WorstBar": -0.14580644343450144,
+          "Liquidated": false,
+          "Years": 8.333105179101072
+        },
+        "buy_hold": {
+          "CAGR": 0.21104215591120212,
+          "MaxDD": -0.8380537066243234,
+          "MAR": 0.2518241423467703,
+          "Sharpe": 0.6381826376408244,
+          "Sortino": 0.8145351989473524,
+          "Final": 4.931452664024864,
+          "Trades": 1,
+          "InMarket": 1.0,
+          "AvgGross": 1.0008257324423424,
+          "WorstBar": -0.22151196599664424,
+          "Liquidated": false,
+          "Years": 8.333105179101072
+        }
+      },
+      "SOL": {
+        "strategy": {
+          "CAGR": 0.6198284116403343,
+          "MaxDD": -0.7088324990888614,
+          "MAR": 0.8744356564309148,
+          "Sharpe": 1.076013063732718,
+          "Sortino": 1.5851076577708418,
+          "Final": 20.06351022567416,
+          "Trades": 241,
+          "InMarket": 0.985390206299097,
+          "AvgGross": 0.6585976826390226,
+          "WorstBar": -0.13130681391111454,
+          "Liquidated": false,
+          "Years": 6.217659137577002
+        },
+        "buy_hold": {
+          "CAGR": 0.7267363276664549,
+          "MaxDD": -0.9660001050415321,
+          "MAR": 0.7523149571864794,
+          "Sharpe": 1.0463739314926646,
+          "Sortino": 1.5002231358427527,
+          "Final": 29.853177821170352,
+          "Trades": 1,
+          "InMarket": 1.0,
+          "AvgGross": 1.0001688160382047,
+          "WorstBar": -0.26814503509317456,
+          "Liquidated": false,
+          "Years": 6.217659137577002
+        }
+      },
+      "BNB": {
+        "strategy": {
+          "CAGR": 0.5237845439179316,
+          "MaxDD": -0.6729857209639344,
+          "MAR": 0.7782996393559463,
+          "Sharpe": 0.9783967799543092,
+          "Sortino": 1.3915149568233975,
+          "Final": 33.44423754972768,
+          "Trades": 277,
+          "InMarket": 1.0,
+          "AvgGross": 1.0192330338832554,
+          "WorstBar": -0.13147662326028864,
+          "Liquidated": false,
+          "Years": 8.333105179101072
+        },
+        "buy_hold": {
+          "CAGR": 0.5895314228668442,
+          "MaxDD": -0.7801684503760713,
+          "MAR": 0.7556463255886179,
+          "Sharpe": 0.9838311479207325,
+          "Sortino": 1.2558144681886028,
+          "Final": 47.5550592898267,
+          "Trades": 1,
+          "InMarket": 1.0,
+          "AvgGross": 1.000350378982084,
+          "WorstBar": -0.22754426314307152,
+          "Liquidated": false,
+          "Years": 8.333105179101072
+        }
+      },
+      "XRP": {
+        "strategy": {
+          "CAGR": 0.07738305664106271,
+          "MaxDD": -0.8435181109803351,
+          "MAR": 0.09173846492890149,
+          "Sharpe": 0.44245355616091997,
+          "Sortino": 0.5960102283165823,
+          "Final": 1.8609889427405497,
+          "Trades": 327,
+          "InMarket": 1.0,
+          "AvgGross": 0.8246098898958195,
+          "WorstBar": -0.19361828345080323,
+          "Liquidated": false,
+          "Years": 8.333105179101072
+        },
+        "buy_hold": {
+          "CAGR": 0.12518115968810584,
+          "MaxDD": -0.8448691884316435,
+          "MAR": 0.14816632136920918,
+          "Sharpe": 0.5913789263533208,
+          "Sortino": 0.7976848796595949,
+          "Final": 2.6720345962346923,
+          "Trades": 1,
+          "InMarket": 1.0,
+          "AvgGross": 1.0009667488883736,
+          "WorstBar": -0.31366926947141316,
+          "Liquidated": false,
+          "Years": 8.333105179101072
+        }
+      }
+    },
+    "bootstrap": {
+      "paths": 200,
+      "cagr_p5": 0.1195323995173262,
+      "cagr_p50": 0.46288585150217454,
+      "mdd_p50": -0.5953783094861169,
+      "mdd_p5": -0.772910788653426,
+      "p_better_mar_than_bh": 0.51,
+      "p_better_cagr_than_bh": 0.43
+    },
+    "deflated_sharpe": {
+      "p": 0.760599866299989,
+      "n_trials": 105,
+      "sr_var_annual": 0.25
+    }
+  }
+}

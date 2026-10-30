@@ -13,9 +13,9 @@
     },
     "prior_trials": 0,
     "rebalance_threshold": 0.1,
-    "issue": null
+    "issue": 2
   },
-  "generated": "2026-10-30 22:14 UTC",
+  "generated": "2026-10-30 22:29 UTC",
   "costs": {
     "Lighter 0%": {
       "CAGR": 0.33015856429501333,
@@ -157,7 +157,7 @@
     "Timing MAR range min > 50 % of base": true,
     "Better MAR than buy & hold on most other assets": false,
     "No liquidation in any cost scenario": true,
-    "Deflated Sharpe \u2265 0.95": true
+    "Deflated Sharpe \u2265 0.95": false
   },
   "robustness": {
     "param_mar_range": [
@@ -330,8 +330,8 @@
       "p_better_cagr_than_bh": 0.385
     },
     "deflated_sharpe": {
-      "p": 0.9956292764591098,
-      "n_trials": 1,
+      "p": 0.13420993811990878,
+      "n_trials": 105,
       "sr_var_annual": 0.25
     }
   }

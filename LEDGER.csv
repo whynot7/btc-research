@@ -1,0 +1,4 @@
+time,commit,strategy,author,variant,params,timeframe,assets,sharpe,cagr,maxdd,prior_trials
+2026-10-30 22:29 UTC,1a278d7,ensemble_trend,agent-a,035c89cb33,"{""min_lb"": 20, ""max_lb"": 250}",1d,BTC,0.8958,0.3195,-0.5356,0
+2026-10-30 22:36 UTC,1a278d7,trendvol,agent-a,ff592bddd3,"{""ema"": 200, ""band"": 0.01, ""vol_window"": 180, ""vol_target"": 0.6, ""max_lev"": 3.0}",4h,BTC+ETH,1.5181,1.0,-0.4438,60
+2026-10-30 22:38 UTC,1a278d7,v3,agent-b,09cc5e0de1,"{""sma"": 200, ""ema"": 50}",1d,BTC,0.8749,0.3051,-0.5246,42

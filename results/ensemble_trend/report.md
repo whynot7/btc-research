@@ -1,6 +1,6 @@
 # ensemble_trend
 
-_Generated 2026-10-30 22:14 UTC · commit 808ccb8 · author agent-a_
+_Generated 2026-10-30 22:29 UTC · commit 1a278d7 · author agent-a_
 
 **Hypothesis:** Averaging trend signals over many lookbacks keeps most of V3's drawdown protection while being far less sensitive to the exact lookback and trading less abruptly.
 
@@ -85,7 +85,7 @@ _Block bootstrap shuffles 30-day chunks of history. It keeps short-term trends b
 
 ### 3e. Deflated Sharpe ratio
 
-Probability that the true Sharpe is above 0 after correcting for **1 trials** (bench variants in LEDGER.csv + declared prior trials): **1.00** (≥ 0.95 is the usual bar).
+Probability that the true Sharpe is above 0 after correcting for **105 trials** (bench variants in LEDGER.csv + declared prior trials): **0.13** (≥ 0.95 is the usual bar).
 
 ## 4. Checklist
 
@@ -95,6 +95,6 @@ Probability that the true Sharpe is above 0 after correcting for **1 trials** (b
 - ✅ Timing MAR range min > 50 % of base
 - ❌ Better MAR than buy & hold on most other assets
 - ✅ No liquidation in any cost scenario
-- ✅ Deflated Sharpe ≥ 0.95
+- ❌ Deflated Sharpe ≥ 0.95
 
 _Research only, not investment advice._
