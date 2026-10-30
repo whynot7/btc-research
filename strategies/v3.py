@@ -11,7 +11,7 @@ META = {
     "params": {"sma": 200, "ema": 50},
     "prior_trials": 42,           # variants tried before joining the bench (from the V3 report)
     "rebalance_threshold": 0.10,
-    "issue": None,
+    "issue": 1,
 }
 
 

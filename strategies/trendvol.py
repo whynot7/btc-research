@@ -13,7 +13,7 @@ META = {
     "params": {"ema": 200, "band": 0.01, "vol_window": 180, "vol_target": 0.60, "max_lev": 3.0},
     "prior_trials": 60,           # rough count of variants Agent A tried before the bench
     "rebalance_threshold": 0.25,
-    "issue": None,
+    "issue": 3,
 }
 
 

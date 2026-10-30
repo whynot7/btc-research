@@ -12,7 +12,7 @@ META = {
     "params": {"min_lb": 20, "max_lb": 250},
     "prior_trials": 0,
     "rebalance_threshold": 0.10,
-    "issue": None,
+    "issue": 2,
 }
 
 LOOKBACKS = (20, 50, 100, 150, 200, 250)
