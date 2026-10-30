@@ -61,8 +61,8 @@ def _binance_1h(asset: str) -> pd.DataFrame:
         columns=["open", "high", "low", "close", "volume"],
         index=pd.to_datetime([x[0] for x in rows], unit="ms"),
     )
-    df = pd.concat([old, new]) if old is not None else new
-    df = df[~df.index.duplicated(keep="last")].sort_index()
+    df = pd.concat([old, new]) if (old is not None and len(new)) else (old if old is not None else new)
+    df = df[~df.index.duplicated(keep="last")].sort_index().astype(float)
     CACHE.mkdir(exist_ok=True)
     df.to_csv(path)
     return df
@@ -125,8 +125,8 @@ def funding(asset: str, index: pd.DatetimeIndex, timeframe: str) -> tuple[pd.Ser
             if len(d) < 500:
                 break
         new = pd.Series([float(x["fundingRate"]) for x in rows], index=pd.to_datetime([int(x["time"]) for x in rows], unit="ms"))
-        s = pd.concat([old, new]) if old is not None else new
-        s = s[~s.index.duplicated(keep="last")].sort_index()
+        s = pd.concat([old, new]) if (old is not None and len(new)) else (old if old is not None else new)
+        s = s[~s.index.duplicated(keep="last")].sort_index().astype(float)
         CACHE.mkdir(exist_ok=True)
         s.to_frame("rate").to_csv(path)
         hours = TF_HOURS[timeframe]

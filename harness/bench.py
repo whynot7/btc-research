@@ -313,8 +313,15 @@ def evaluate(name: str, quick: bool = False) -> dict:
         append_ledger(row)
         rows_l.append({k: str(v) for k, v in row.items()})
     variants = {r["variant"]: r for r in rows_l}
-    prior = sum(int(float(r.get("prior_trials") or 0)) for r in {r["strategy"]: r for r in rows_l}.values())
-    n_trials = len(variants) + prior
+    # declared prior trials of every strategy on the bench (not only those already in the ledger)
+    prior = {r["strategy"]: int(float(r.get("prior_trials") or 0)) for r in rows_l}
+    for other in all_strategies():
+        try:
+            prior[other] = int(load_strategy(other)[1].get("prior_trials", 0))
+        except Exception:  # noqa: BLE001
+            pass
+    not_yet_benched = [o for o in all_strategies() if o not in {r["strategy"] for r in rows_l}]
+    n_trials = len(variants) + len(not_yet_benched) + sum(prior.values())
     srs = np.array([float(r["sharpe"]) for r in variants.values()])
     ppy = engine.bars_per_year(main_res.index)
     sr_var_ann = float(np.var(srs)) if len(srs) > 2 else 0.25    # fallback: annual SR std 0.5 across tries
