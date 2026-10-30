@@ -1,0 +1,88 @@
+name: Bench
+
+on:
+  push:
+    branches: [main]
+    paths: ["strategies/**", "harness/**", "tests/**", "requirements.txt", ".github/workflows/bench.yml"]
+  workflow_dispatch:
+    inputs:
+      strategies:
+        description: "Strategy names (space separated). Empty = all."
+        required: false
+        default: ""
+  schedule:
+    - cron: "17 6 * * 1"          # weekly: extend the FORWARD period with new data
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: bench
+  cancel-in-progress: false
+
+jobs:
+  bench:
+    # Comment "/bench" (all) or "/bench <name> ..." in any issue to trigger a run.
+    if: github.event_name != 'issue_comment' || startsWith(github.event.comment.body, '/bench')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Data cache
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: market-data-${{ github.run_id }}
+          restore-keys: market-data-
+
+      - run: pip install -r requirements.txt
+
+      - name: Unit tests (offline)
+        run: |
+          mkdir -p results
+          set -o pipefail
+          python -m pytest -q 2>&1 | tee results/_last_run.log
+
+      - name: Run bench
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_STRATEGIES: ${{ github.event.inputs.strategies }}
+          COMMENT: ${{ github.event.comment.body }}
+        run: |
+          set -o pipefail
+          ARGS="$INPUT_STRATEGIES"
+          if [ -n "$COMMENT" ]; then ARGS=$(echo "$COMMENT" | head -1 | sed -E 's#^/bench ?##'); fi
+          python -m harness.bench $ARGS 2>&1 | tee -a results/_last_run.log
+
+      - name: Record run
+        if: always()
+        run: |
+          echo "$(date -u +'%Y-%m-%d %H:%M UTC') ${{ github.event_name }} ${{ job.status }} ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> results/_runs.log
+
+      - name: Commit results
+        if: always()
+        run: |
+          git config user.name "bench-bot"
+          git config user.email "bench-bot@users.noreply.github.com"
+          git add results LEDGER.csv LEADERBOARD.md 2>/dev/null || git add results
+          git diff --cached --quiet || git commit -m "Bench results $(date -u +'%Y-%m-%d %H:%M UTC') [skip ci]"
+          git pull --rebase --autostash && git push
+
+      - name: Comment link on triggering issue
+        if: always() && github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} \
+            --body "Bench run ${{ job.status }}: see ${{ github.server_url }}/${{ github.repository }}/blob/main/LEADERBOARD.md and \`results/\`. Log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
